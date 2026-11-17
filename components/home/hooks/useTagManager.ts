@@ -7,7 +7,7 @@ import type { SourceCategory, SourceLite } from '@/lib/api/source-classes';
 
 const DEFAULT_TAG: Tag = { id: 'latest', label: '最近更新', value: '' };
 
-const STORAGE_KEY_PREFIX = 'kvideo_custom_tags_';
+const STORAGE_KEY = 'kvideo_custom_tags_all';
 
 const tagIdForCategory = (name: string) => `cat_${name}`;
 
@@ -46,24 +46,19 @@ const reconcileWithCategories = (saved: Tag[], categories: SourceCategory[]): Ta
     return ensureDefaultTag(result);
 };
 
-const bucketMatches = (bucket: SourceCategory['bucket'], contentType: 'movie' | 'tv') =>
-    bucket === contentType;
-
 /**
- * Sources publish their own site-specific and adult categories. The default filter bar
+ * Sources publish their own site-specific and adult categories. The filter bar
  * shows mainstream genres only; everything else stays reachable through search.
  */
-const EXCLUDED_CATEGORY = /伦理|三级|福利|里番|无码|写真|成人|传媒|主播|萝莉|杏吧|性视界|海角|糖心|玩偶|兔子|91|麻豆|精东|大象|乌鸦|蜜桃|PsychoPorn|中文字幕|两性|自拍|偷拍|门事件/i;
+const EXCLUDED_CATEGORY = /伦理|三级|福利|里番|无码|写真|成人|传媒|主播|萝莉|杏吧|性视界|海角|糖心|玩偶|兔子|91|麻豆|精东|大象|乌鸦|蜜桃|PsychoPorn|中文字幕|两性|自拍|偷拍|门事件|擦边|AV/i;
 
-/** Cap the default row so the bar stays usable; the highest-coverage categories win. */
-const MAX_DEFAULT_CHIPS = 18;
+/**
+ * Keep categories that several sources support. Single-source names are usually
+ * that site's own labels and would bury the shared genres.
+ */
+const MIN_SOURCE_COVERAGE = 3;
 
 export function useTagManager() {
-    const [contentType, setContentType] = useState<'movie' | 'tv'>(() => {
-        if (typeof window === 'undefined') return 'movie';
-        const saved = localStorage.getItem('kvideo_default_content_type');
-        return saved === 'tv' ? 'tv' : 'movie';
-    });
     const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG.id);
     const [tags, setTags] = useState<Tag[]>([DEFAULT_TAG]);
     const [categories, setCategories] = useState<SourceCategory[]>([]);
@@ -71,13 +66,6 @@ export function useTagManager() {
     const [newTagInput, setNewTagInput] = useState('');
     const [showTagManager, setShowTagManager] = useState(false);
     const [justAddedTag, setJustAddedTag] = useState(false);
-
-    // Persist content type preference
-    useEffect(() => {
-        localStorage.setItem('kvideo_default_content_type', contentType);
-    }, [contentType]);
-
-    const storageKey = `${STORAGE_KEY_PREFIX}${contentType}`;
 
     // The local store is read synchronously, so the enabled source list is stable for the session
     const enabledSources = useMemo<SourceLite[]>(() => {
@@ -106,14 +94,13 @@ export function useTagManager() {
             const data = await response.json();
             const all: SourceCategory[] = Array.isArray(data?.categories) ? data.categories : [];
             return all
-                .filter((category) => bucketMatches(category.bucket, contentType))
-                .filter((category) => !EXCLUDED_CATEGORY.test(category.name))
-                .slice(0, MAX_DEFAULT_CHIPS);
+                .filter((category) => category.sourceCount >= MIN_SOURCE_COVERAGE)
+                .filter((category) => !EXCLUDED_CATEGORY.test(category.name));
         } catch (error) {
             console.error('Load source categories failed:', error);
             return [];
         }
-    }, [enabledSources, contentType]);
+    }, [enabledSources]);
 
     // Load source categories, then merge them with the user's saved order and custom tags
     useEffect(() => {
@@ -128,7 +115,7 @@ export function useTagManager() {
                 setCategories(loaded);
 
                 let saved: Tag[] = [];
-                const raw = localStorage.getItem(storageKey);
+                const raw = localStorage.getItem(STORAGE_KEY);
                 if (raw) {
                     try {
                         const parsed = JSON.parse(raw);
@@ -150,11 +137,11 @@ export function useTagManager() {
         return () => {
             cancelled = true;
         };
-    }, [contentType, storageKey, loadCategories]);
+    }, [loadCategories]);
 
     const saveTags = (newTags: Tag[]) => {
         setTags(newTags);
-        localStorage.setItem(storageKey, JSON.stringify(newTags));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTags));
     };
 
     const handleAddTag = () => {
@@ -179,7 +166,7 @@ export function useTagManager() {
     };
 
     const handleRestoreDefaults = async () => {
-        localStorage.removeItem(storageKey);
+        localStorage.removeItem(STORAGE_KEY);
         setIsLoadingTags(true);
         try {
             const loaded = await loadCategories();
@@ -206,12 +193,10 @@ export function useTagManager() {
         tags,
         categories,
         selectedTag,
-        contentType,
         newTagInput,
         showTagManager,
         justAddedTag,
         isLoadingTags,
-        setContentType,
         setSelectedTag,
         setNewTagInput,
         setShowTagManager,

@@ -19,8 +19,7 @@ interface CategoryQuery {
 export function usePopularMovies(
     selectedTag: string,
     tags: Tag[],
-    categories: SourceCategory[],
-    contentType: 'movie' | 'tv' = 'movie'
+    categories: SourceCategory[]
 ) {
     const [movies, setMovies] = useState<HomeMovie[]>([]);
     const [loading, setLoading] = useState(false);
@@ -115,7 +114,7 @@ export function usePopularMovies(
         setMovies([]);
         setHasMore(true);
         loadMovies(0, false);
-    }, [selectedTag, contentType, queryKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [selectedTag, queryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const { prefetchRef, loadMoreRef } = useInfiniteScroll({
         hasMore,
