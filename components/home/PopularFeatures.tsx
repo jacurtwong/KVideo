@@ -12,14 +12,7 @@ import { MovieGrid } from './MovieGrid';
 import { useTagManager } from './hooks/useTagManager';
 import { usePopularMovies } from './hooks/usePopularMovies';
 import { usePersonalizedRecommendations } from './hooks/usePersonalizedRecommendations';
-
-interface DoubanMovie {
-  id: string;
-  title: string;
-  cover: string;
-  rate: string;
-  url: string;
-}
+import type { HomeMovie } from '@/lib/types';
 
 interface PopularFeaturesProps {
   onSearch?: (query: string) => void;
@@ -28,6 +21,7 @@ interface PopularFeaturesProps {
 export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
   const {
     tags,
+    categories,
     selectedTag,
     contentType,
     newTagInput,
@@ -68,10 +62,11 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
   } = usePopularMovies(
     effectiveRecommendSelected ? '' : selectedTag,
     tags,
+    categories,
     contentType
   );
 
-  const handleMovieClick = (movie: DoubanMovie) => {
+  const handleMovieClick = (movie: HomeMovie) => {
     if (onSearch) {
       onSearch(movie.title);
     }
