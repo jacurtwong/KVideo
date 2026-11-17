@@ -5,20 +5,13 @@
 
 import { MovieCard } from './MovieCard';
 import { Icons } from '@/components/ui/Icon';
-
-interface DoubanMovie {
-  id: string;
-  title: string;
-  cover: string;
-  rate: string;
-  url: string;
-}
+import type { HomeMovie } from '@/lib/types';
 
 interface MovieGridProps {
-  movies: DoubanMovie[];
+  movies: HomeMovie[];
   loading: boolean;
   hasMore: boolean;
-  onMovieClick: (movie: DoubanMovie) => void;
+  onMovieClick: (movie: HomeMovie) => void;
   prefetchRef: React.RefObject<HTMLDivElement | null>;
   loadMoreRef: React.RefObject<HTMLDivElement | null>;
 }

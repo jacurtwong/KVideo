@@ -41,6 +41,17 @@ export interface VideoItem {
   latency?: number; // Response time in milliseconds
 }
 
+// Card shown on the homepage grid (sourced from third-party APIs, not Douban)
+export interface HomeMovie {
+  id: string;
+  title: string;
+  cover: string;
+  rate: string; // empty when the source publishes no score
+  url: string; // empty for source-backed cards
+  remarks?: string; // e.g. 已完结 / 更新至12集
+  sourceName?: string;
+}
+
 export interface Video extends VideoItem {
   sourceName?: string;
   isNew?: boolean;

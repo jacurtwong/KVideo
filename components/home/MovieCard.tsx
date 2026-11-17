@@ -8,18 +8,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icon';
-
-interface DoubanMovie {
-  id: string;
-  title: string;
-  cover: string;
-  rate: string;
-  url: string;
-}
+import type { HomeMovie } from '@/lib/types';
 
 interface MovieCardProps {
-  movie: DoubanMovie;
-  onMovieClick: (movie: DoubanMovie) => void;
+  movie: HomeMovie;
+  onMovieClick: (movie: HomeMovie) => void;
 }
 
 export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieCardProps) {
@@ -75,12 +68,14 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
               <p className="text-sm text-[var(--text-muted)]">暂无图片</p>
             </div>
           )}
-          {movie.rate && parseFloat(movie.rate) > 0 && (
+          {movie.rate && parseFloat(movie.rate) > 0 ? (
             <div
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation(); // 阻止事件冒泡，防止触发外层卡片的搜索点击
-                window.open(movie.url, '_blank', 'noopener,noreferrer');
+                if (movie.url) {
+                  window.open(movie.url, '_blank', 'noopener,noreferrer');
+                }
               }}
               title="在豆瓣中查看"
               className="absolute top-2 right-2 bg-black/80 hover:bg-black/90 px-2.5 py-1.5 flex items-center gap-1.5 rounded-[var(--radius-full)] z-20 hover:scale-105 transition-all shadow-md"
@@ -90,7 +85,16 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
                 {movie.rate}
               </span>
             </div>
-          )}
+          ) : movie.remarks ? (
+            <div
+              title={movie.sourceName ? `来自 ${movie.sourceName}` : undefined}
+              className="absolute top-2 right-2 bg-black/75 px-2 py-1 rounded-[var(--radius-full)] z-20 shadow-md max-w-[70%]"
+            >
+              <span className="text-[11px] font-medium text-white line-clamp-1">
+                {movie.remarks}
+              </span>
+            </div>
+          ) : null}
         </div>
         <div className="pt-3">
           <h3 className="font-semibold text-sm text-center text-[var(--text-color)] line-clamp-2 group-hover:text-[var(--accent-color)] transition-colors">
