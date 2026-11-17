@@ -11,8 +11,8 @@ env:
   SYNC_BRANCH: upstream-sync-conflict # The branch name used if a conflict occurs
 
 on:
-  schedule:
-    - cron: "0 */6 * * *"
+  # Scheduled upstream sync disabled: this fork is maintained independently.
+  # Run manually from the Actions tab if an upstream merge is ever wanted.
   workflow_dispatch:
 
 concurrency:
