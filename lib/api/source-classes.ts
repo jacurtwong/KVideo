@@ -202,6 +202,77 @@ async function fetchClasses(
  * Aggregate every source's categories into one list, keeping for each name the
  * sources (and their per-source type ids) that can return content for it.
  */
+/**
+ * Curated display order. Coverage alone buries the categories people actually open.
+ * Entries listed here come first in this order; everything else follows by coverage.
+ * Spellings are canonicalised, so 动作片/动作 and 韩国剧/韩剧 share one position.
+ */
+const CATEGORY_PRIORITY_ORDER = [
+  '国产动漫',
+  '中国动漫',
+  '动漫',
+  '国产剧',
+  '大陆剧',
+  '内地剧',
+  '香港剧',
+  '港澳剧',
+  '港台剧',
+  '港剧',
+  '韩剧',
+  '韩国剧',
+  '日剧',
+  '日本剧',
+  '欧美剧',
+  'Netflix自制剧',
+  'Netflix电影',
+  '4K电影',
+  '邵氏电影',
+  '网络电影',
+  '动作片',
+  '动作',
+  '喜剧片',
+  '喜剧',
+  '科幻片',
+  '科幻',
+  '奇幻片',
+  '奇幻',
+  '冒险',
+  '恐怖片',
+  '恐怖',
+  '惊悚片',
+  '惊悚',
+  '灾难片',
+  '灾难',
+  '悬疑片',
+  '悬疑',
+  '战争片',
+  '战争',
+  '古装片',
+  '犯罪片',
+];
+
+const CATEGORY_PRIORITY = (() => {
+  const table = new Map<string, number>();
+  CATEGORY_PRIORITY_ORDER.forEach((raw, index) => {
+    const name = canonicalCategoryName(raw);
+    if (!name || table.has(name)) return;
+    table.set(name, index);
+  });
+  return table;
+})();
+
+const UNRANKED_PRIORITY = 1000;
+
+function priorityOf(name: string): number {
+  return CATEGORY_PRIORITY.get(name) ?? UNRANKED_PRIORITY;
+}
+
+function compareCategories(a: SourceCategory, b: SourceCategory): number {
+  const byPriority = priorityOf(a.name) - priorityOf(b.name);
+  if (byPriority !== 0) return byPriority;
+  return b.sourceCount - a.sourceCount || a.name.localeCompare(b.name, 'zh-CN');
+}
+
 export async function loadSourceCategories(
   sources: SourceLite[],
   signal?: AbortSignal,
@@ -252,7 +323,7 @@ export async function loadSourceCategories(
 
   const categories = Array.from(merged.values())
     .filter((category) => category.sourceCount >= minSources)
-    .sort((a, b) => b.sourceCount - a.sourceCount || a.name.localeCompare(b.name, 'zh-CN'));
+    .sort(compareCategories);
 
   return { categories, failedSources };
 }
